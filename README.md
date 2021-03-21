@@ -17,6 +17,9 @@ Think of Batch Flash Loans as a Flash Loan Buffet where you can pick and choose 
 2. Compile BatchFlashDemo.sol using solc 0.6.12
 3. On deployment use Aave V2's kovan instance of lending pool addresses provider - see Aave's [deployed contracts section](https://docs.aave.com/v2/-MJXUluJ2u1DiL-VU6MM/deployed-contracts).
 
+## Kovan testnet contract address
+https://kovan.etherscan.io/address/0xe7c78b4858aaca51bde58ab37e9c2fc160ca9754#writeContract
+
 ![](https://github.com/fifikobayashi/AaveV2-BatchFlashDemo/blob/main/img/1.%20Deploy.PNG)
 
 ## Execution
