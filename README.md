@@ -1,96 +1,179 @@
-# Aave Flash Loan Truffle Box
+# Aave V2 Batch Flash Demo
 
-This Truffle box comes with everything you need to start [developing on flash loans](https://docs.aave.com/developers/tutorials/performing-a-flash-loan/...-with-truffle)
+This is a remix-friendly example contract based on [David T's guide](https://docs.aave.com/v2/-MJXUluJ2u1DiL-VU6MM/guides/flash-loans) that demonstrates the execution of a Batch Flash Loan transaction. This particular example also interacts with the Aave V2 protocol using the batch flashed AAVE/DAI/LINK liquidity. 
 
-## Installation and Setup
+Within the AAVE/DAI/LINK Batch Flash, this example atomically calls on @AaveAave V2's lending pools to:
+- Deposit the batch flash liquidity onto the lending pools as collateral
+- Borrow additional LINK tokens on stable rate mode based on the deposited collateral
+- Repay the debt to unlock collateral
+- Withdraw the collateral and use it to repay the Batch Flash Loan
 
-0. Install Truffle globally, if not already installed.
-    ```
-    npm install -g truffle@latest
-    ```
-    Note: there is an issue with some older Truffle versions, e.g. v.5.1.25.
-    **This truffle box is confirmed working with the latest version (Truffle v5.1.32)**
-1. Download the box.
-    ```
-    truffle unbox aave/flashloan-box
-    ```
-2. Rename the `env` file to `.env` and edit the following values in the file:
-    - Sign up for [Infura](https://infura.io/) (or a similar provider) and replace `YOUR_INFURA_KEY` with an API key for your project (this is called Project ID in the Infra dashboard).
-    - Replace `YOUR_ACCOUNT_KEY_FOR_DEPLOYMENT` with the private key of the ethereum account you will be using to deploy the contracts. This account will become the `owner` of the contract.
-3. Ensure your ethereum account has some ETH to deploy the contract.
-4. In your terminal, navigate to your repo directory and install the dependencies (if not already done):
-    ```
-    npm install
-    ```
-5. In the same terminal, replace `NAME_OF_YOUR_NETWORK` with either `kovan`, `ropsten`, or `mainnet` (depending on where you want to deploy the contract):
-    ```
-    truffle console --network NAME_OF_YOUR_NETWORK
-    ```
-6. You are now connected to the network you chose. In the same terminal window:
-    ```
-    migrate --reset
-    ```
-7. After a few minutes, your contract will be deployed on your chosen network.
-    - If you have not added any profitable logic to `Flashloan.sol` line 23, then you will need to fund your contract with the desired asset.
-    - See our [documentation](https://docs.aave.com/developers/developing-on-aave/deployed-contract-instances#reserves-assets) for token address and faucets.
-8. Call your contract's flashloan function within the truffle console, replacing `RESERVE_ADDRESS` with the [reserve address](https://docs.aave.com/developers/developing-on-aave/deployed-contract-instances#reserves-assets) found in our documentation:
-    ```
-    let f = await Flashloan.deployed()
-    await f.flashloan(RESERVE_ADDRESS)
-    ```
-    - if the above operation takes an unreasonably long time or timesout, try `CTRL+C` to exit the Truffle console, repeat step 5, then try this step agin. You may need to wait a few blocks before your node can 'see' the deployed contract.
-9. If you've successfully followed the above steps, then congratulations, you've just made a flash loan.
-    - For reference, here is an [example transaction](https://ropsten.etherscan.io/tx/0x7877238373ffface4fb2b98ca4db1679c64bc2c84c7754432aaab994a9b51e17) that followed the above steps on `Ropsten` using **Dai**.
-    - For reference, here is an [example transaction](https://ropsten.etherscan.io/tx/0x32eb3e03e00803dc19a7d2edd0a0a670756fbe210be81697be312518baeb16cc) that followed the above steps on `Ropsten` using **ETH**.
+All in one single transaction.
 
-## Setup for cross protocol flash lending
-If you are working across protocols, such as using the flash loaned amount on another #DeFi protocol, sometimes it is easier to fork mainnet and use each protocol's production contracts and production ERC20 tokens.
+Think of Batch Flash Loans as a Flash Loan Buffet where you can pick and choose what assets you want to flash loan, and then pack them together onto the same plate (transaction) so you can leverage multiple flash liquidity concurrently.
 
-1. Follow the steps 0 --> step 4 from above.
-2. (Install and) Run [Ganache](https://www.trufflesuite.com/ganache), preferably the [CLI version](https://github.com/trufflesuite/ganache-cli)
-3. In `truffle-config.js`, ensure the details for the `development` network match up with your running Ganache instance.
-4. To minimise set up steps with Aave's lending pools, use Ganache's fork feature. This will 'fork' mainnet into your Ganache instance.
-    Open terminal, replace `YOUR_INFURA_KEY` (this is called Project ID in the Infra dashboard) in the following and run:
-    ```
-    ganache-cli --fork https://mainnet.infura.io/v3/YOUR_INFURA_KEY -i 1
-    ```
-5. In a new terminal window in your repo directory, run:
-    ```
-    truffle console
-    ```
-6. Migrate your Flashloan contract to your instance of Ganache with:
-    ```
-    migrate --reset
-    ```
-7. After a few minutes, your contract will be deployed.
-    - If you have not added any profitable logic to `Flashloan.sol` line 23, then you will need to fund your contract with the desired asset.
-    - See our [documentation](https://docs.aave.com/developers/developing-on-aave/deployed-contract-instances#reserves-assets) for token address and faucets.
-8. Your contract is now deployed on your local Ganache, which is mirroring mainnet. Call your contract's flashloan function within the truffle console, replacing `RESERVE_ADDRESS` with the [reserve address](https://docs.aave.com/developers/developing-on-aave/deployed-contract-instances#reserves-assets) found in our documentation:
-    ```
-    let f = await Flashloan.deployed()
-    await f.flashloan(RESERVE_ADDRESS)
-    ```
-    Be patient as your ganache instance works its magic.
+## Setup and Deployment
+1. Plonk all *.sol contracts above into the same folder in remix
+2. Compile BatchFlashDemo.sol using solc 0.6.12
+3. On deployment use Aave V2's kovan instance of lending pool addresses provider - see Aave's [deployed contracts section](https://docs.aave.com/v2/-MJXUluJ2u1DiL-VU6MM/deployed-contracts).
 
-9. If your implementation is correct, then the transaction will succeed. If it fails/reverts, a reason will be given.
+![](https://github.com/fifikobayashi/AaveV2-BatchFlashDemo/blob/main/img/1.%20Deploy.PNG)
 
-## Known issues
-### No access to archive state errors
-If you are using Ganache to fork a network, then you may have issues with the blockchain archive state every 30 minutes. This is due to your node provider (i.e. Infura) only allowing free users access to 30 minutes of archive state. To solve this, upgrade to a paid plan, or simply restart your ganache instance and redploy your contracts.
-
-### Unable to debug executeOperation() with mainnet ganache fork
-The Truffle debugger does not work too well with proxy / complex calls. You may find that the Truffle debugger returns an error such as:
+## Execution
+4. Once the contract is published you need to manually transfer some DAI, AAVE and LINK to the contract you just created to cover the batch flash fees. The minimum amount to be transferred depends on how much you flash in the next step.
+5. Expand the executeFlashLoans function, which asks you how much AAVE/DAI/LINK you want to batch flash. Some figures that worked on kovan were 100 AAVE, 500k DAI and 10k LINK.
 ```
-TypeError: Cannot read property 'version' of undefined
-at ...
+REMEMBER:
+If you flash 100 AAVE, the 9bps fee is 0.09 AAVE
+If you flash 500,000 DAI, the 9bps fee is 450 DAI
+If you flash 10,000 LINK, the 9bps fee is 45 LINK
+All of these fees need to be sitting ON THIS CONTRACT before you execute this batch flash.
 ```
-- In this case you can try calling your `executeOperation()` function directly, instead of having Aave's `LendingPool` contract invoke the function. This will allow you to debug the function directly, however you will need to supply the relevant parameters (e.g. `_amount`, `_fee`, `_reserve`, etc).
-- Alternatively, see the 'Troubleshooting' link.
+![](https://github.com/fifikobayashi/AaveV2-BatchFlashDemo/blob/main/img/2.%20%20Execute.PNG)
+
+6. Click transact, and the contract will execute the following demo logic:
+```
+- Gets a batch flash loan of 100 AAVE, 500k DAI, 10k LINK
+- Deposits all of this flash liquidity onto the Aave V2 lending pool
+- Borrows 100 LINK based on the deposited collateral
+- Repays 100 LINK and unlocks the deposited collateral
+- Withdrawls all of the deposited collateral (AAVE/DAI/LINK)
+- Repays batch flash loan including the 9bps fee for each asset
+```
+
+7. If all goes well, it should [look like this on etherscan](https://kovan.etherscan.io/tx/0x395c7dfc7c3fd9eadf0f13f698880cecc98d9de5e9de1124d279474671d45ce0) or [like this in more detail](https://ethtx.info/kovan/0x395c7dfc7c3fd9eadf0f13f698880cecc98d9de5e9de1124d279474671d45ce0).
+
+8. When you're done playing with this contract just call rugPull() to pull all your ERC20 tokens from the contract. Otherwise you'll run out of test tokens very quickly.
+
+![](https://github.com/fifikobayashi/AaveV2-BatchFlashDemo/blob/main/img/3.%20rugpull.PNG)
+
+## Common Issues and Things of Note
+
+- Fail with error '1' - lending pool issue i.e you're trying to flash more than the pool reserves
+- Fail with error '8' - when you've used a borrow rate that does not exist
+- Fail with error '18' - error relating to switching borrow rate modes
+- Fail with error 'SafeERC20: low-level call failed' - could be many things, including:
+    
+    * not having enough tokens sitting on the contract to cover the flash fee
+    
+    * not having set the appropriate spending limits via approve()
+    
+    * deploying the contract with the wrong LendingPoolAddressProvider
+    
+    * not using the right DAI reserve address for Aave V2 on kovan
+ 
+ - Get your batch flash array sizes right, otherwise you'll get a null pointer induced revert.
+
+I'll keep adding to this list as I troubleshoot them.
+
+***Update:*** thanks to [Zer0dot](https://twitter.com/Zer0dots), the full list of errors can be located [here](https://kovan.etherscan.io/address/0xbF3f2372E6073FCf31d16212A471b36cDb8D6071#code).
+```
+ * @dev Error messages prefix glossary:
+ *  - VL = ValidationLogic
+ *  - MATH = Math libraries
+ *  - AT = aToken or DebtTokens
+ *  - LP = LendingPool
+ *  - LPAPR = LendingPoolAddressesProviderRegistry
+ *  - LPC = LendingPoolConfiguration
+ *  - RL = ReserveLogic
+ *  - LPCM = LendingPoolCollateralManager
+ *  - P = Pausable
+ */
+library Errors {
+  //common errors
+  string public constant CALLER_NOT_POOL_ADMIN = '33'; // 'The caller must be the pool admin'
+  string public constant BORROW_ALLOWANCE_NOT_ENOUGH = '59'; // User borrows on behalf, but allowance are too small
+
+  //contract specific errors
+  string public constant VL_INVALID_AMOUNT = '1'; // 'Amount must be greater than 0'
+  string public constant VL_NO_ACTIVE_RESERVE = '2'; // 'Action requires an active reserve'
+  string public constant VL_RESERVE_FROZEN = '3'; // 'Action cannot be performed because the reserve is frozen'
+  string public constant VL_CURRENT_AVAILABLE_LIQUIDITY_NOT_ENOUGH = '4'; // 'The current liquidity is not enough'
+  string public constant VL_NOT_ENOUGH_AVAILABLE_USER_BALANCE = '5'; // 'User cannot withdraw more than the available balance'
+  string public constant VL_TRANSFER_NOT_ALLOWED = '6'; // 'Transfer cannot be allowed.'
+  string public constant VL_BORROWING_NOT_ENABLED = '7'; // 'Borrowing is not enabled'
+  string public constant VL_INVALID_INTEREST_RATE_MODE_SELECTED = '8'; // 'Invalid interest rate mode selected'
+  string public constant VL_COLLATERAL_BALANCE_IS_0 = '9'; // 'The collateral balance is 0'
+  string public constant VL_HEALTH_FACTOR_LOWER_THAN_LIQUIDATION_THRESHOLD = '10'; // 'Health factor is lesser than the liquidation threshold'
+  string public constant VL_COLLATERAL_CANNOT_COVER_NEW_BORROW = '11'; // 'There is not enough collateral to cover a new borrow'
+  string public constant VL_STABLE_BORROWING_NOT_ENABLED = '12'; // stable borrowing not enabled
+  string public constant VL_COLLATERAL_SAME_AS_BORROWING_CURRENCY = '13'; // collateral is (mostly) the same currency that is being borrowed
+  string public constant VL_AMOUNT_BIGGER_THAN_MAX_LOAN_SIZE_STABLE = '14'; // 'The requested amount is greater than the max loan size in stable rate mode
+  string public constant VL_NO_DEBT_OF_SELECTED_TYPE = '15'; // 'for repayment of stable debt, the user needs to have stable debt, otherwise, he needs to have variable debt'
+  string public constant VL_NO_EXPLICIT_AMOUNT_TO_REPAY_ON_BEHALF = '16'; // 'To repay on behalf of an user an explicit amount to repay is needed'
+  string public constant VL_NO_STABLE_RATE_LOAN_IN_RESERVE = '17'; // 'User does not have a stable rate loan in progress on this reserve'
+  string public constant VL_NO_VARIABLE_RATE_LOAN_IN_RESERVE = '18'; // 'User does not have a variable rate loan in progress on this reserve'
+  string public constant VL_UNDERLYING_BALANCE_NOT_GREATER_THAN_0 = '19'; // 'The underlying balance needs to be greater than 0'
+  string public constant VL_DEPOSIT_ALREADY_IN_USE = '20'; // 'User deposit is already being used as collateral'
+  string public constant LP_NOT_ENOUGH_STABLE_BORROW_BALANCE = '21'; // 'User does not have any stable rate loan for this reserve'
+  string public constant LP_INTEREST_RATE_REBALANCE_CONDITIONS_NOT_MET = '22'; // 'Interest rate rebalance conditions were not met'
+  string public constant LP_LIQUIDATION_CALL_FAILED = '23'; // 'Liquidation call failed'
+  string public constant LP_NOT_ENOUGH_LIQUIDITY_TO_BORROW = '24'; // 'There is not enough liquidity available to borrow'
+  string public constant LP_REQUESTED_AMOUNT_TOO_SMALL = '25'; // 'The requested amount is too small for a FlashLoan.'
+  string public constant LP_INCONSISTENT_PROTOCOL_ACTUAL_BALANCE = '26'; // 'The actual balance of the protocol is inconsistent'
+  string public constant LP_CALLER_NOT_LENDING_POOL_CONFIGURATOR = '27'; // 'The caller of the function is not the lending pool configurator'
+  string public constant LP_INCONSISTENT_FLASHLOAN_PARAMS = '28';
+  string public constant AT_CALLER_MUST_BE_LENDING_POOL = '29'; // 'The caller of this function must be a lending pool'
+  string public constant AT_CANNOT_GIVE_ALLVWANCE_TO_HIMSELF = '30'; // 'User cannot give allowance to himself'
+  string public constant AT_TRANSFER_AMOUNT_NOT_GT_0 = '31'; // 'Transferred amount needs to be greater than zero'
+  string public constant RL_RESERVE_ALREADY_INITIALIZED = '32'; // 'Reserve has already been initialized'
+  string public constant LPC_RESERVE_LIQUIDITY_NOT_0 = '34'; // 'The liquidity of the reserve needs to be 0'
+  string public constant LPC_INVALID_ATOKEN_POOL_ADDRESS = '35'; // 'The liquidity of the reserve needs to be 0'
+  string public constant LPC_INVALID_STABLE_DEBT_TOKEN_POOL_ADDRESS = '36'; // 'The liquidity of the reserve needs to be 0'
+  string public constant LPC_INVALID_VARIABLE_DEBT_TOKEN_POOL_ADDRESS = '37'; // 'The liquidity of the reserve needs to be 0'
+  string public constant LPC_INVALID_STABLE_DEBT_TOKEN_UNDERLYING_ADDRESS = '38'; // 'The liquidity of the reserve needs to be 0'
+  string public constant LPC_INVALID_VARIABLE_DEBT_TOKEN_UNDERLYING_ADDRESS = '39'; // 'The liquidity of the reserve needs to be 0'
+  string public constant LPC_INVALID_ADDRESSES_PROVIDER_ID = '40'; // 'The liquidity of the reserve needs to be 0'
+  string public constant LPC_INVALID_CONFIGURATION = '75'; // 'Invalid risk parameters for the reserve'
+  string public constant LPC_CALLER_NOT_EMERGENCY_ADMIN = '76'; // 'The caller must be the emergency admin'
+  string public constant LPAPR_PROVIDER_NOT_REGISTERED = '41'; // 'Provider is not registered'
+  string public constant LPCM_HEALTH_FACTOR_NOT_BELOW_THRESHOLD = '42'; // 'Health factor is not below the threshold'
+  string public constant LPCM_COLLATERAL_CANNOT_BE_LIQUIDATED = '43'; // 'The collateral chosen cannot be liquidated'
+  string public constant LPCM_SPECIFIED_CURRENCY_NOT_BORROWED_BY_USER = '44'; // 'User did not borrow the specified currency'
+  string public constant LPCM_NOT_ENOUGH_LIQUIDITY_TO_LIQUIDATE = '45'; // "There isn't enough liquidity available to liquidate"
+  string public constant LPCM_NO_ERRORS = '46'; // 'No errors'
+  string public constant LP_INVALID_FLASHLOAN_MODE = '47'; //Invalid flashloan mode selected
+  string public constant MATH_MULTIPLICATION_OVERFLOW = '48';
+  string public constant MATH_ADDITION_OVERFLOW = '49';
+  string public constant MATH_DIVISION_BY_ZERO = '50';
+  string public constant RL_LIQUIDITY_INDEX_OVERFLOW = '51'; //  Liquidity index overflows uint128
+  string public constant RL_VARIABLE_BORROW_INDEX_OVERFLOW = '52'; //  Variable borrow index overflows uint128
+  string public constant RL_LIQUIDITY_RATE_OVERFLOW = '53'; //  Liquidity rate overflows uint128
+  string public constant RL_VARIABLE_BORROW_RATE_OVERFLOW = '54'; //  Variable borrow rate overflows uint128
+  string public constant RL_STABLE_BORROW_RATE_OVERFLOW = '55'; //  Stable borrow rate overflows uint128
+  string public constant AT_INVALID_MINT_AMOUNT = '56'; //invalid amount to mint
+  string public constant LP_FAILED_REPAY_WITH_COLLATERAL = '57';
+  string public constant AT_INVALID_BURN_AMOUNT = '58'; //invalid amount to burn
+  string public constant LP_FAILED_COLLATERAL_SWAP = '60';
+  string public constant LP_INVALID_EQUAL_ASSETS_TO_SWAP = '61';
+  string public constant LP_REENTRANCY_NOT_ALLOWED = '62';
+  string public constant LP_CALLER_MUST_BE_AN_ATOKEN = '63';
+  string public constant LP_IS_PAUSED = '64'; // 'Pool is paused'
+  string public constant LP_NO_MORE_RESERVES_ALLOWED = '65';
+  string public constant LP_INVALID_FLASH_LOAN_EXECUTOR_RETURN = '66';
+  string public constant RC_INVALID_LTV = '67';
+  string public constant RC_INVALID_LIQ_THRESHOLD = '68';
+  string public constant RC_INVALID_LIQ_BONUS = '69';
+  string public constant RC_INVALID_DECIMALS = '70';
+  string public constant RC_INVALID_RESERVE_FACTOR = '71';
+  string public constant LPAPR_INVALID_ADDRESSES_PROVIDER_ID = '72';
+  string public constant VL_INCONSISTENT_FLASHLOAN_PARAMS = '73';
+  string public constant LP_INCONSISTENT_PARAMS_LENGTH = '74';
+  string public constant UL_INVALID_INDEX = '77';
+  string public constant LP_NOT_CONTRACT = '78';
+```
+<br /><br /><br /><br />
+
+That's about it! Have fun coming up with unique use cases on how to leverage all this concurrent flash liquidity. 
+
+Some obvious ones include a Batch Flash contract that is tied to all your active loans across multiple DeFi protocols and when triggered it simultaneously closes them all via concurrent self liquidation transactions.
+ 
+If you found this useful and would like to send me some gas money: 
+```
+0xef03254aBC88C81Cb822b5E4DCDf22D55645bCe6
+```
 
 
-## Troubleshooting
-See our [Troubleshooting Errors](https://docs.aave.com/developers/tutorials/troubleshooting-errors) documentation.
 
-# Resources
- - Our [flash loan documentation](https://docs.aave.com/developers/tutorials/performing-a-flash-loan)
- - Our [Developer Discord channel](https://discord.gg/CJm5Jt3)
+Thanks,
+@fifikobayashi
